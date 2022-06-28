@@ -1,37 +1,124 @@
-## Welcome to GitHub Pages
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>NoPixel Territory Map</title>
+	<link rel="icon" href="icons/favicon.ico"/>
 
-You can use the [editor on GitHub](https://github.com/Aeel1/np-gangmap/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
+	<link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+	<link rel="stylesheet" href="fontawesome/css/font-awesome.css">
+	<link rel="stylesheet" href="style.css">
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+	<script src="js/libs/jquery-min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+	<script src="js/libs/underscore-min.js"></script>
+	<script src="js/libs/backbone-min.js"></script>
+	<script src="js/libs/handlebars.js"></script>
+	<script src="//maps.googleapis.com/maps/api/js?v=3.exp&key="></script>
+	<script src="js/libs/maplabel-compiled.js"></script>
+	<script src="js/app.js"></script>
 
-### Markdown
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+</head>
+<body>
+	<header>
+		<p class="left" style="padding-top: 5px;"><a href="">NoPixel Territory Map</a></p>
+		<ul class="right">
+			<div class="dropdown">
+				<a href="https://github.com/skyrossm/np-gangmap/graphs/contributors" target="_blank"><button class="btn btn-primary">Contributors</button></a>
+				<button class="btn btn-primary" id="toggleruler" onclick="toggleRuler();$(this).css('display', 'none');">Add Distance Ruler</button>
+				<button class="btn btn-primary" id="createzone" onclick="printArray()">Add New Region</button>
+				<button class="btn btn-secondary dropdown-toggle" type="button" id="ddmenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+					Select Map Type
+				</button>
+				<div class="dropdown-menu" aria-labelledby="ddmenu">
+					<a href="#" id="Atlas"           class="dropdown-item active" onclick="$('#' + map.getMapTypeId()).removeClass('active'); map.setMapTypeId('Atlas');           $(this).addClass('active');">Atlas</a>
+					<a href="#" id="Satellite"       class="dropdown-item"        onclick="$('#' + map.getMapTypeId()).removeClass('active'); map.setMapTypeId('Satellite');       $(this).addClass('active');">Satellite</a>
+					<a href="#" id="Road"            class="dropdown-item"        onclick="$('#' + map.getMapTypeId()).removeClass('active'); map.setMapTypeId('Road');            $(this).addClass('active');">Road</a>
+				</div>
+			</div>
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+		</ul>
+	</header>
 
-```markdown
-Syntax highlighted code block
+	<div id="map" style="background:rgb(43, 164, 210);"></div>
 
-# Header 1
-## Header 2
-### Header 3
+	<script type="x/template" id="categoriesTemplate">
+		{{#each categories}}
+			<section class="type">
+				<h3>{{name}}</h3>
+				<ul>
+					{{#each types}}
+						<li><label><input type="checkbox" {{#if enabled}}checked{{/if}} value="{{name}}"> <img src="icons/{{icon}}"> {{name}}</label> <a href="#" class="details" data-name="{{name}}"><i class="icon-chevron-sign-right"></i></a></li>
+					{{/each}}
+					<li><label><input type="checkbox" {{#if enabled}}checked{{/if}} value="labels"> <img src="icons/General/wall-breach.png"> Labels</label> <a href="#" class="details" data-name="Labels"></a></li>
 
-- Bulleted
-- List
+				</ul>
+			</section>
+		{{/each}}
+	</script>
 
-1. Numbered
-2. List
+	<script type="x/template" id="categoryDetailsTemplate">
+		<section class="type">
+			<h3><a href="#" class="back details"><i class="icon-chevron-sign-left"></i></a> {{type.name}}</h3>
+			<ul class="listview">
+				{{#each locations}}
+					<li data-id="{{id}}"><div style="height:20px;width:20px;background-color:#{{fillcolor}};border: 3px solid #{{strokecolor}}; display:inline-block;margin-right:10px;"></div><label>{{title}}</label></li>
+				{{/each}}
+			</ul>
+		</section>
+	</script>
 
-**Bold** and _Italic_ and `Code` text
+	<script type="x/template" id="markerPopupTemplate2">
+		<div id="info-window" style="max-width:420px;">
+			<div class="scrollable">
+				<span class="header">
+					<h3>{{title}}</h3>
+				</span>
+				<div id="info-body">
+					{{#if notes}}
+						<br>
+						<p class="notes">{{notes}}</p>
+					{{/if}}
+					{{#if video}}
+						<div class="video-{{id}}">
+							<br>
+							<h4>Video</h4>
+							<div class="youtubewrapper">
+								<iframe width="100%" src="//www.youtube.com/embed/{{video.yt_id}}?theme=light&amp;autoplay=0&amp;autohide=1&amp;iv_load_policy=3&amp;rel=0&amp;showinfo=0&amp;loop=1{{#if video.start}}&amp;start={{timestampToSeconds video.start}}{{/if}}{{#if video.end}}&amp;end={{timestampToSeconds video.end}}{{/if}}" frameborder="0" allowfullscreen></iframe>
+							</div>
+							{{#if video.yt_user_link}}
+								<p>
+									<a href="//www.youtube.com/{{video.yt_user_link}}" style="color:#222;font-size:.8em;float:right;" target="_blank">
+										Video by {{video.yt_user_display}}
+									</a>
+								</p>
+							{{/if}}
+						</div>
+					{{/if}}
+					{{#if images}}
+						<br>
+				 		<h4>Images</h4>
+					{{/if}}
+					{{#each images}}
+						<div class="image-{{id}}">
+						 	<span>{{headline}}</span>
+						 	<img src="{{url}}" class="image-{{id}}">
+						</div>
+						<br>
+				 	{{/each}}
+					{{#if wiki_link}}
+						<hr>
+						<a target="_blank" href="{{wiki_link}}">See {{title}} on the NoPixel Wiki</a>
+					{{/if}}
+				</div>
+			</div>
+		</div>
+	</script>
 
-[Link](url) and ![Image](src)
-```
+	<div id="typeDetails" class="types"></div>
 
-For more details see [Basic writing and formatting syntax](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/Aeel1/np-gangmap/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+	<div id="types" class="types"></div>
+</body>
+</html>
