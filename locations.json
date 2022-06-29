@@ -3687,7 +3687,7 @@
 		"title": "OGs",
 		"notes": "Old Gangsters (ØGs) é uma organização criminosa formada em 11 de maio de 2022. formada por antigos gangsters de Los Santos que resolveram voltar a ativa para continuar com os negócios de outrora.",
 		"wiki_link": "https://nopixelsa.fandom.com/pt-br/wiki/OGs",
-		"order": 0,
+		"order": 1,
 		"strokecolor": "FF0000",
 		"fillcolor": "FF0000",
 		"latlngarray": [
@@ -3702,17 +3702,9 @@
 			{"lat": -76.483, "lng": 20.395},
 			{"lat": -76.570, "lng": 18.539},
 			{"lat": -76.593, "lng": 15.682},
-			{"lat": -77.830, "lng": 15.287},
-		],
-		"video": {
-			"yt_id": "nsU0cTeo10I",
-			"yt_user_display": "NoPixel Circle",
-			"yt_user_link": "channel/UC-sXbidiR5kfoPwDmtyr9Zg"
-		}
+			{"lat": -77.830, "lng": 15.287}
+		]		
 	},
-
-
-
 	{
 		"id": 3001,
 		"type": "Neutral",
